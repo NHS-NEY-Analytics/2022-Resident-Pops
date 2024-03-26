@@ -1,0 +1,71 @@
+--Set One: Join together the following tables:
+--1) LSOA 2011 to 2021 mapping
+--2) Table with total LSOA populations from the 2020 mid-year estimates
+--3) Table with the 2019 LSOA IMD scores
+
+SELECT [LSOA11CD]
+      ,[LSOA11NM]
+      ,[LSOA21CD]
+      ,[LSOA21NM]
+	  ,b.Pop as LSOA11_2020_Pop
+	  ,c.IMD_Score
+  Into #IntitalExtract
+  FROM [NHSE_Sandbox_North].[WM].[LSOA_2011_2021_Mapping] as a
+  left join (Select Area_Code, sum(Total_Population) as Pop From [NHSE_Sandbox_North].[WM].[LSOA_Age_Sex_Pops_2020] Group by Area_Code) as b on a.LSOA11CD COLLATE DATABASE_DEFAULT = b.Area_Code COLLATE DATABASE_DEFAULT
+  left join [NHSE_Sandbox_North].[WM].[LSOA_IMD_Scores] as c on a.LSOA11CD COLLATE DATABASE_DEFAULT = c.LSOA_Code COLLATE DATABASE_DEFAULT
+  Where LSOA11CD like 'E%' --England LSOAs only
+
+--Get LSOA 2020 Populations mapped to the 2021 configurations
+Select [LSOA21CD]
+      ,[LSOA21NM]
+	  ,sum(LSOA11_2020_Pop) as Pop
+
+	  Into #LSOA2021Pops
+	  
+	  From #IntitalExtract
+
+	  Group by [LSOA21CD]
+      ,[LSOA21NM]
+
+-- Join back to original table and for each 2011 name and code, list the 2021 LSOA/s it maps to (in nearly all instances this remains unchanged)
+-- Also list it's 2020 mid-year population, and then divide this by the 2021 LSOA configuration's population (in cases where the LSOA configuration has remained unchanged, the value will just be one)
+-- Multiply this weighting by the IMD score to create a weighting
+Select a.LSOA11CD
+      ,a.LSOA11NM
+	  ,a.LSOA21CD
+	  ,a.LSOA21NM
+	  ,a.LSOA11_2020_Pop
+	  ,b.Pop
+	  ,cast(a.LSOA11_2020_Pop as float)/cast(b.Pop as float) as Weighting
+	  ,a.IMD_Score
+	  ,cast(a.LSOA11_2020_Pop as float)/cast(b.Pop as float) * IMD_Score as Weighted_IMD_Score
+
+	  Into #Step2
+	  
+	  From #IntitalExtract as a
+	  left join #LSOA2021Pops as b on a.LSOA21CD = b.LSOA21CD
+
+-- Create a table which has the 2021 names/codes and the sum of the weighted IMD scores
+Select LSOA21CD
+	  ,LSOA21NM
+	  ,sum(Weighted_IMD_Score) as IMD_Score
+
+Into #Step3
+
+From #Step2
+
+Group by LSOA21CD
+	  ,LSOA21NM
+
+--Produce final output with IMD_Scores placed into quintiles and deciles using the NTILE function
+Select LSOA21CD
+	  ,LSOA21NM
+	  ,IMD_Score
+	  ,NTILE(5) OVER (ORDER BY IMD_Score desc) AS Quintile
+	  ,NTILE(10) OVER (ORDER BY IMD_Score desc) AS Decile
+
+Into [NHSE_Sandbox_North].[WM].[LSOA2021_IMD_Scores]
+
+From #Step3
+
+
