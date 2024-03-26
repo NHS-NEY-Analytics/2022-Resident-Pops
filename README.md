@@ -12,6 +12,7 @@ SQL and R Script
 •	SQL file for calculating LSOA 2019 IMD scores mapped to the 2021 configurations.
 
 Outputs
+
 •	Excel file containing LSOA populations broken down by 5-year age and sex bands for males and females.
 
 •	Excel file containing LSOA 2019 IMD scores mapped to the 2021 LSOA configurations.
