@@ -9,7 +9,7 @@ SQL and R Script
 
 •	R script for aggregating LSOA populations into 5-year age and sex bands.
 
-•	SQL file for calculating LSOA 2019 IMD scores mapped to the 2021 configurations.
+•	SQL file for calculating LSOA 2019 IMD scores mapped to the 2021 LSOA configurations.
 
 Outputs
 
