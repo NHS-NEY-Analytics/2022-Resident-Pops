@@ -10,12 +10,7 @@ lapply(my_packages, library, character.only = TRUE)                             
 #---------------------------------------
 #Read in Dummy Data
 
-fp<- paste("C:/Users/", Sys.getenv("USERNAME"), "/OneDrive - NHS England/NEY/Inequalities/Population/", sep="") #The folder where the Excel file is saved
-
-setwd(fp) #set the working directory to the file path above. 
-
 Raw_Data <- read_excel(paste(fp, "LSOA 2022 Age-Sex Popuations.xlsx", sep=""))
-
 
 #-----------------------------------
 #Perform any data manipulation needed
